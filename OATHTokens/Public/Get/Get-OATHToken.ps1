@@ -172,7 +172,14 @@ function Get-OATHToken {
                     $tokens.value = $tokens.value | Where-Object { $_.assignedTo.id -eq $UserId }
                 }
                 
-                # Transform and return tokens
+                # Transform and return tokens. Guard against the PowerShell pipeline quirk where
+                # a $null value (left over when a Where-Object filter matches nothing) is treated
+                # as a single pipeline item rather than zero items - without this check, filters
+                # that match nothing would incorrectly produce one bogus all-null token object.
+                if (-not $tokens.value) {
+                    return @()
+                }
+                
                 return $tokens.value | ForEach-Object {
                     [PSCustomObject]@{
                         PSTypeName = 'OATHToken'
