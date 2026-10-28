@@ -1,41 +1,39 @@
 # OATH Token Management for Microsoft Entra ID
 
-A comprehensive PowerShell module for managing hardware OATH tokens in Microsoft Entra ID (formerly Azure AD) through the Microsoft Graph API.
+A PowerShell module for managing hardware OATH tokens in Microsoft Entra ID (formerly Azure AD) through the Microsoft Graph API.
 
 [Manage OATH Tokens in Entra](https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-mfa-manage-oath-tokens#scenario-admin-creates-token-that-users-self-assign-and-activate)
 
 ## Overview
 
-The OATH Token Management module provides a complete solution for managing OATH-TOTP hardware tokens (such as YubiKeys) in Microsoft Entra ID. It offers both a command-line interface with individual cmdlets and an interactive menu system, making it suitable for both scripted automation and interactive use.
+The module manages OATH-TOTP hardware tokens (such as YubiKeys) in Microsoft Entra ID. You can use the individual cmdlets in scripts, or the interactive menu.
 
 ## Features
 
-- 🔑 **Complete Token Lifecycle Management**
-  - Add individual or bulk tokens to your inventory
+- **Token lifecycle**
+  - Add tokens one at a time or in bulk
   - Assign tokens to users by ID, UPN, or display name
-  - Activate tokens with verification codes
+  - Activate tokens with a verification code
   - Unassign tokens from users
-  - Remove tokens from the system
+  - Remove tokens
 
-- 📋 **Inventory Management**
-  - List all tokens with filtering options
-  - Export token data to CSV or JSON
-  - Generate detailed reports
+- **Inventory**
+  - List tokens, filtered by status, serial number, or user
+  - Export tokens to CSV or JSON
 
-- 🔄 **Bulk Operations**
+- **Bulk operations**
   - Import tokens from JSON or CSV
-  - Bulk assign tokens to users
-  - Bulk remove tokens
+  - Assign tokens to users during import
+  - Remove tokens in bulk
 
-- 🔐 **TOTP Support**
-  - Built-in TOTP code generation
-  - Automated token activation
-  - RFC 6238 compliant implementation
+- **TOTP**
+  - Generate TOTP codes (RFC 6238)
+  - Activate a token from its secret without entering a code
 
-- 🧩 **Flexible Secret Handling**
-  - Support for Base32 encoded secrets
-  - Support for hexadecimal secrets
-  - Support for plain text secrets
+- **Secret formats**
+  - Base32
+  - Hexadecimal
+  - Plain text
 
 ## Prerequisites
 
@@ -101,20 +99,17 @@ Copy-Item -Path "PATH_TO_MODULE\OATHTokens" -Destination "$HOME\Documents\PowerS
 
 ## Module Structure
 
-The module is organized into the following components:
+- **Public**: Exported cmdlets
+  - **Add**, **Get**, **Remove**: Token management
+  - **Set**: Assignment and activation
+  - **Import**, **Export**: Bulk import and export
+  - **UI**: Interactive menu
+  - **Utility**: TOTP, Base32 conversion, and serial number generation
 
-- **Public**: Contains all user-accessible cmdlets
-  - **Core**: Basic token management functions
-  - **Import**: Bulk import operations
-  - **Export**: Bulk export operations
-  - **Set**: Token state management
-  - **UI**: Interactive menu system
-  - **Utility**: Helper functions
-
-- **Private**: Internal helper functions
-  - Base32 conversion utilities
-  - Graph API request handlers
-  - Validation functions
+- **Private**: Internal helpers
+  - Base32 conversion
+  - Graph API requests
+  - Validation
 
 ## Core Commands
 
@@ -303,9 +298,9 @@ Get-TOTP -Secret "3a085cfcd4618c61dc235c300d7a70c4" -InputFormat Hex
 Get-TOTP -Secret "MySecretPassword123" -InputFormat Text
 ```
 
-## Interactive Menu Navigation
+## Interactive Menu
 
-The module provides an intuitive menu-based interface for managing OATH tokens:
+Run `Show-OATHTokenMenu` to open the menu.
 
 ### Main Menu
 - **Get OATH**: Lists and exports tokens
@@ -336,7 +331,7 @@ The module provides an intuitive menu-based interface for managing OATH tokens:
 
 ### Automating Token Setup
 
-This example script automates the full token lifecycle:
+This script creates a token, assigns it to a user, and generates the current TOTP code:
 
 ```powershell
 # Generate a unique serial number
@@ -360,12 +355,11 @@ Write-Host "Token secret: $base32Secret"
 Write-Host "Current TOTP: $totpCode"
 ```
 
-### Integration with Other Systems
+### User Onboarding
 
-The module can be integrated with other identity management systems:
+This function issues a token as part of onboarding a new user:
 
 ```powershell
-# Example integration with a user onboarding process
 function New-UserOnboarding {
     param($UserPrincipalName, $DisplayName)
     
@@ -397,75 +391,45 @@ function New-UserOnboarding {
 
 ### Common Issues
 
-- **Error: Not connected to Microsoft Graph**
-  - Solution: Run `Connect-MgGraph -Scopes "Policy.ReadWrite.AuthenticationMethod","Directory.Read.All"`
+- **Not connected to Microsoft Graph**: run `Connect-MgGraph -Scopes "Policy.ReadWrite.AuthenticationMethod","Directory.Read.All"`
+- **Token not found**: check the token ID or serial number with `Get-OATHToken`
+- **User not found**: check the user ID or UPN with `Get-MgUser`
+- **Token activation failed**: check the verification code is correct and hasn't expired
+- **Assignment succeeds but the token still shows as available**: check the user ID, and run the command again with `-Verbose` to see each step
 
-- **Error: Token not found**
-  - Solution: Verify the token ID is correct with `Get-OATHToken`
+To check your Graph connection and permissions:
 
-- **Error: User not found**
-  - Solution: Verify the user ID or UPN with `Get-MgUser`
+```powershell
+Get-MgContext
+(Get-MgContext).Scopes
+```
 
-- **Error: Token activation failed**
-  - Solution: Ensure the verification code is valid and has not expired
+Add `-Verbose` to any command for more detail:
 
-- **Error: Assignment seems to succeed but token shows as available**
-  - Solution: Verify the user ID is correct and use `-Verbose` flag to check assignment process details
-
-### Diagnostic Steps
-
-1. **Check Graph Connection**:
-   ```powershell
-   Get-MgContext
-   ```
-
-2. **Verify Permissions**:
-   ```powershell
-   (Get-MgContext).Scopes
-   ```
-
-3. **Enable Verbose Output**:
-   ```powershell
-   Set-OATHTokenUser -TokenId $id -UserId $user -Verbose
-   ```
+```powershell
+Set-OATHTokenUser -TokenId $id -UserId $user -Verbose
+```
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Pull requests are welcome.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-feature`)
-3. Commit your changes (`git commit -m 'Add some new feature'`)
-4. Push to the branch (`git push origin feature/new-feature`)
-5. Open a Pull Request
+### Publishing
 
-### Module Publishing Process
+The module is published to the PowerShell Gallery by a GitHub Actions workflow, configured in `psgallery.json`.
 
-This module is published to the PowerShell Gallery using a simplified configuration-based approach:
+To publish a new version:
 
-1. **Configuration File**:
-   - All publishing settings are controlled through `/psgallery.json`
-   - This file includes the version number, release notes, and a flag to control publishing
+1. Update the version and release notes in `psgallery.json` and set `publishThisVersion` to `true`.
+2. Push to `main`. The workflow only runs when files under `OATHTokens/` or `psgallery.json` change.
+3. The workflow lints the module with PSScriptAnalyzer, imports it, and publishes it. If the manifest version doesn't match `psgallery.json`, it updates the manifest for that run only. The change isn't committed, so keep `OATHTokens.psd1` in sync yourself.
+4. Set `publishThisVersion` back to `false` afterwards. The workflow doesn't commit this change either.
 
-2. **Publishing a New Version**:
-   - Update the module code with your changes
-   - Modify `psgallery.json` to:
-     - Increment the version number
-     - Set `publishThisVersion` to `true`
-     - Update the release notes
-   - Commit and push to the main branch
-
-3. **Automated Process**:
-   - GitHub Actions detects the changes
-   - Updates version information in all module files
-   - Publishes to PowerShell Gallery
-   - Automatically disables the publishing flag
-
-For more details, see the workflow documentation in `.github/workflows/README.md`.
+See `.github/workflows/README.md` for details.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT. See [LICENSE](LICENSE).
 
 ## Acknowledgments
 
