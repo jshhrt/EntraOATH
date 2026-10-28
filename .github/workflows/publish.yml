@@ -22,7 +22,20 @@ jobs:
       - name: Lint with PSScriptAnalyzer
         shell: pwsh
         run: |
-          Invoke-ScriptAnalyzer -Path ./OATHTokens -Recurse -Outvariable issues
+          # PSScriptAnalyzer 1.25.0 intermittently crashes on modules that call Export-ModuleMember
+          # (PowerShell/PSScriptAnalyzer#2229). Retry before failing the build.
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+              try {
+                  $issues = @(Invoke-ScriptAnalyzer -Path ./OATHTokens -Recurse -ErrorAction Stop)
+                  break
+              }
+              catch {
+                  if ($attempt -eq $maxAttempts) { throw }
+                  Write-Warning "PSScriptAnalyzer crashed (attempt $attempt of $maxAttempts): $($_.Exception.Message) Retrying..."
+              }
+          }
+          $issues
           $errors   = $issues.Where({$_.Severity -eq 'Error'})
           $warnings = $issues.Where({$_.Severity -eq 'Warning'})
           if ($errors) {
