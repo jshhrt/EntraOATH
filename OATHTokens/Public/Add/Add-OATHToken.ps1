@@ -109,7 +109,7 @@ function Add-OATHToken {
         # Get existing tokens to check for duplicates
         try {
             Write-Verbose "Retrieving existing tokens..."
-            $existingTokens = (Invoke-MgGraphWithErrorHandling -Uri $baseEndpoint).value
+            $existingTokens = Invoke-MgGraphPagedRequest -Uri $baseEndpoint
             Write-Verbose "Found $($existingTokens.Count) existing tokens"
         }
         catch {

@@ -322,7 +322,7 @@ The module provides an intuitive menu-based interface for managing OATH tokens:
 
 ### Add OATH Menu
 - Add OATH Token
-- Assign OATH User
+- Assign OATH User (by token ID or serial number)
 - Activate OATH Token
 - Bulk Import OATH Tokens
 - Activate with TOTP
@@ -330,7 +330,7 @@ The module provides an intuitive menu-based interface for managing OATH tokens:
 ### Remove OATH Menu
 - Remove OATH
 - Bulk Remove OATH
-- Unassign OATH token
+- Unassign OATH token (by token ID or serial number)
 
 ## Advanced Scenarios
 

@@ -138,8 +138,8 @@ function Get-OATHToken {
                     $UserId = $user.id
                 }
                 
-                # Get all tokens first
-                $tokens = Invoke-MgGraphWithErrorHandling -Uri $baseEndpoint
+                # Get all tokens first (all pages)
+                $tokens = @{ value = Invoke-MgGraphPagedRequest -Uri $baseEndpoint }
                 
                 # Filter by status if needed
                 if ($Status -or $AvailableOnly -or $AssignedOnly -or $ActivatedOnly) {

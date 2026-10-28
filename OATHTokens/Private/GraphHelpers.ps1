@@ -198,6 +198,28 @@ function Invoke-MgGraphWithErrorHandling {
     }
 }
 
+function Invoke-MgGraphPagedRequest {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Uri
+    )
+
+    $results = [System.Collections.Generic.List[object]]::new()
+    $nextUri = $Uri
+
+    # Follow @odata.nextLink until Graph stops returning one
+    while ($nextUri) {
+        $response = Invoke-MgGraphWithErrorHandling -Uri $nextUri
+        if ($response.value) {
+            $results.AddRange(@($response.value))
+        }
+        $nextUri = $response.'@odata.nextLink'
+    }
+
+    return ,$results.ToArray()
+}
+
 function Get-MgUserByIdentifier {
     [CmdletBinding()]
     param(

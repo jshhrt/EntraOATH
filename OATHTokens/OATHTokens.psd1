@@ -3,7 +3,7 @@
     RootModule = 'OATHTokens.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.6.0'
+    ModuleVersion = '0.6.1'
 
     # ID used to uniquely identify this module
     GUID = '21b43a58-8d4f-4d60-9745-f993fb61efc4'
@@ -71,7 +71,7 @@
             ProjectUri = 'https://github.com/uniQuk/EntraOATH'
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'Enhance Add-OATHToken to support user assignment in a single step. Reduce menu complexity. Allow mixed assignments in bulk imports.'
+            ReleaseNotes = 'Menu assign and unassign options accept a serial number as well as a token ID (thanks adriandeller, #4). Token lookups now follow Graph pagination so large tenants return all tokens. Fix filters that match nothing returning an empty token object (thanks GGeneralServices, #3).'
         }
     }
 }

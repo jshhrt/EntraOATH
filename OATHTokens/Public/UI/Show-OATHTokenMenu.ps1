@@ -233,11 +233,18 @@ function Show-OATHTokenMenu {
                 }
                 "2" {
                     # Assign existing token to user
-                    $tokenId = Read-Host "Enter token ID"
+                    $tokenInput = Read-Host "Enter token ID or serial number"
                     $userId = Read-Host "Enter user ID or UPN"
-                    
+
+                    # Treat input as a token ID only if it's a GUID - serial numbers can contain hyphens
+                    $tokenParam = if (Test-OATHTokenId -TokenId $tokenInput -WarningAction SilentlyContinue) {
+                        @{ TokenId = $tokenInput }
+                    } else {
+                        @{ SerialNumber = $tokenInput }
+                    }
+
                     Write-Host "Assigning token to user..." -ForegroundColor $headerColor
-                    $result = Set-OATHTokenUser -TokenId $tokenId -UserId $userId
+                    $result = Set-OATHTokenUser @tokenParam -UserId $userId
                     
                     if ($result) {
                         Write-Host "Token assigned successfully." -ForegroundColor $successColor
@@ -414,10 +421,17 @@ function Show-OATHTokenMenu {
                 }
                 "3" {
                     # Unassign token
-                    $tokenId = Read-Host "Enter token ID to unassign"
-                    
+                    $tokenInput = Read-Host "Enter token ID or serial number to unassign"
+
+                    # Treat input as a token ID only if it's a GUID - serial numbers can contain hyphens
+                    $tokenParam = if (Test-OATHTokenId -TokenId $tokenInput -WarningAction SilentlyContinue) {
+                        @{ TokenId = $tokenInput }
+                    } else {
+                        @{ SerialNumber = $tokenInput }
+                    }
+
                     Write-Host "Unassigning token..." -ForegroundColor $headerColor
-                    $result = Set-OATHTokenUser -TokenId $tokenId -Unassign
+                    $result = Set-OATHTokenUser @tokenParam -Unassign
                     
                     if ($result) {
                         Write-Host "Token unassigned successfully." -ForegroundColor $successColor

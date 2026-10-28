@@ -1,8 +1,8 @@
 {
     "module": "OATHTokens",
     "publishSettings": {
-        "version": "0.6.0",
+        "version": "0.6.1",
         "publishThisVersion": true,
-        "releaseNotes": "Enhance Add-OATHToken to support user assignment in a single step"
+        "releaseNotes": "Menu accepts serial number for assign/unassign. Token lookups follow Graph pagination. Fix empty-filter results."
     }
 }
