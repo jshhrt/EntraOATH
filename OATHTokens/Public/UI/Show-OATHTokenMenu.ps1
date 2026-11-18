@@ -258,15 +258,17 @@ function Show-OATHTokenMenu {
                 }
                 "3" {
                     # Activate token with verification code
-                    $tokenId = Read-Host "Enter token ID or serial number"
-                    if (-not (Test-OATHTokenId -TokenId $tokenId -WarningAction SilentlyContinue)) {
-                        $tokenId = (Get-OATHToken -SerialNumber $tokenId | Select-Object -First 1).Id
+                    $tokenInput = Read-Host "Enter token ID or serial number"
+                    $tokenParam = if (Test-OATHTokenId -TokenId $tokenInput -WarningAction SilentlyContinue) {
+                        @{ TokenId = $tokenInput }
+                    } else {
+                        @{ SerialNumber = $tokenInput }
                     }
                     $userId = Read-Host "Enter user ID or UPN"
                     $verificationCode = Read-Host "Enter verification code"
                     
                     Write-Host "Activating token..." -ForegroundColor $headerColor
-                    $result = Set-OATHTokenActive -TokenId $tokenId -UserId $userId -VerificationCode $verificationCode
+                    $result = Set-OATHTokenActive @tokenParam -UserId $userId -VerificationCode $verificationCode
                     
                     if ($result) {
                         Write-Host "Token activated successfully." -ForegroundColor $successColor
@@ -313,9 +315,11 @@ function Show-OATHTokenMenu {
                 }
                 "5" {
                     # Activate token with TOTP
-                    $tokenId = Read-Host "Enter token ID or serial number"
-                    if (-not (Test-OATHTokenId -TokenId $tokenId -WarningAction SilentlyContinue)) {
-                        $tokenId = (Get-OATHToken -SerialNumber $tokenId | Select-Object -First 1).Id
+                    $tokenInput = Read-Host "Enter token ID or serial number"
+                    $tokenParam = if (Test-OATHTokenId -TokenId $tokenInput -WarningAction SilentlyContinue) {
+                        @{ TokenId = $tokenInput }
+                    } else {
+                        @{ SerialNumber = $tokenInput }
                     }
                     $userId = Read-Host "Enter user ID or UPN"
                     $secret = Read-Host "Enter token secret"
@@ -326,7 +330,7 @@ function Show-OATHTokenMenu {
                     }
                     
                     Write-Host "Activating token with generated TOTP code..." -ForegroundColor $headerColor
-                    $result = Set-OATHTokenActive -TokenId $tokenId -UserId $userId -Secret $secret -SecretFormat $secretFormat
+                    $result = Set-OATHTokenActive @tokenParam -UserId $userId -Secret $secret -SecretFormat $secretFormat
                     
                     if ($result) {
                         Write-Host "Token activated successfully with generated TOTP code." -ForegroundColor $successColor
