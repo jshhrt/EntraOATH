@@ -171,38 +171,6 @@ function Show-OATHTokenMenu {
             }
         }
         
-        function Resolve-ActivationTokenId {
-            param([string]$Identifier)
-
-            if ([string]::IsNullOrWhiteSpace($Identifier)) {
-                Write-Host "Enter a token ID or serial number." -ForegroundColor $errorColor
-                return
-            }
-
-            $Identifier = $Identifier.Trim()
-            if (Test-OATHTokenId -TokenId $Identifier -WarningAction SilentlyContinue) {
-                return $Identifier
-            }
-
-            try {
-                # Match literally rather than using Get-OATHToken's wildcard serial search.
-                $matchingTokens = @(Get-OATHToken -ErrorAction Stop | Where-Object { $_.SerialNumber -eq $Identifier })
-            } catch {
-                Write-Host "Failed to look up token by serial number: $_" -ForegroundColor $errorColor
-                return
-            }
-
-            if ($matchingTokens.Count -eq 0) {
-                Write-Host "No token found with serial number: $Identifier" -ForegroundColor $errorColor
-            } elseif ($matchingTokens.Count -gt 1) {
-                Write-Host "Multiple tokens found with serial number $Identifier. Enter the token ID instead." -ForegroundColor $errorColor
-            } elseif (-not $matchingTokens[0].Id -or -not (Test-OATHTokenId -TokenId $matchingTokens[0].Id -WarningAction SilentlyContinue)) {
-                Write-Host "The token with serial number $Identifier has no valid token ID." -ForegroundColor $errorColor
-            } else {
-                return $matchingTokens[0].Id
-            }
-        }
-
         # Add OATH menu
         function Show-AddMenu {
             Clear-Host
@@ -290,19 +258,20 @@ function Show-OATHTokenMenu {
                 }
                 "3" {
                     # Activate token with verification code
-                    $tokenId = Resolve-ActivationTokenId (Read-Host "Enter token ID or serial number")
-                    if ($tokenId) {
-                        $userId = Read-Host "Enter user ID or UPN"
-                        $verificationCode = Read-Host "Enter verification code"
-
-                        Write-Host "Activating token..." -ForegroundColor $headerColor
-                        $result = Set-OATHTokenActive -TokenId $tokenId -UserId $userId -VerificationCode $verificationCode
-
-                        if ($result) {
-                            Write-Host "Token activated successfully." -ForegroundColor $successColor
-                        } else {
-                            Write-Host "Failed to activate token." -ForegroundColor $errorColor
-                        }
+                    $tokenId = Read-Host "Enter token ID or serial number"
+                    if (-not (Test-OATHTokenId -TokenId $tokenId -WarningAction SilentlyContinue)) {
+                        $tokenId = (Get-OATHToken -SerialNumber $tokenId | Select-Object -First 1).Id
+                    }
+                    $userId = Read-Host "Enter user ID or UPN"
+                    $verificationCode = Read-Host "Enter verification code"
+                    
+                    Write-Host "Activating token..." -ForegroundColor $headerColor
+                    $result = Set-OATHTokenActive -TokenId $tokenId -UserId $userId -VerificationCode $verificationCode
+                    
+                    if ($result) {
+                        Write-Host "Token activated successfully." -ForegroundColor $successColor
+                    } else {
+                        Write-Host "Failed to activate token." -ForegroundColor $errorColor
                     }
                     
                     Write-Host "Press any key to continue..." -ForegroundColor $promptColor
@@ -344,24 +313,25 @@ function Show-OATHTokenMenu {
                 }
                 "5" {
                     # Activate token with TOTP
-                    $tokenId = Resolve-ActivationTokenId (Read-Host "Enter token ID or serial number")
-                    if ($tokenId) {
-                        $userId = Read-Host "Enter user ID or UPN"
-                        $secret = Read-Host "Enter token secret"
-                        $secretFormat = Read-Host "Enter secret format (Base32, Hex, Text) or leave blank for Base32"
-
-                        if ([string]::IsNullOrWhiteSpace($secretFormat)) {
-                            $secretFormat = "Base32"
-                        }
-
-                        Write-Host "Activating token with generated TOTP code..." -ForegroundColor $headerColor
-                        $result = Set-OATHTokenActive -TokenId $tokenId -UserId $userId -Secret $secret -SecretFormat $secretFormat
-
-                        if ($result) {
-                            Write-Host "Token activated successfully with generated TOTP code." -ForegroundColor $successColor
-                        } else {
-                            Write-Host "Failed to activate token with TOTP." -ForegroundColor $errorColor
-                        }
+                    $tokenId = Read-Host "Enter token ID or serial number"
+                    if (-not (Test-OATHTokenId -TokenId $tokenId -WarningAction SilentlyContinue)) {
+                        $tokenId = (Get-OATHToken -SerialNumber $tokenId | Select-Object -First 1).Id
+                    }
+                    $userId = Read-Host "Enter user ID or UPN"
+                    $secret = Read-Host "Enter token secret"
+                    $secretFormat = Read-Host "Enter secret format (Base32, Hex, Text) or leave blank for Base32"
+                    
+                    if ([string]::IsNullOrWhiteSpace($secretFormat)) {
+                        $secretFormat = "Base32"
+                    }
+                    
+                    Write-Host "Activating token with generated TOTP code..." -ForegroundColor $headerColor
+                    $result = Set-OATHTokenActive -TokenId $tokenId -UserId $userId -Secret $secret -SecretFormat $secretFormat
+                    
+                    if ($result) {
+                        Write-Host "Token activated successfully with generated TOTP code." -ForegroundColor $successColor
+                    } else {
+                        Write-Host "Failed to activate token with TOTP." -ForegroundColor $errorColor
                     }
                     
                     Write-Host "Press any key to continue..." -ForegroundColor $promptColor
