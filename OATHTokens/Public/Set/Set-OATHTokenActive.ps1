@@ -6,6 +6,8 @@
     Activation requires a verification code that matches the expected TOTP code for the token.
 .PARAMETER TokenId
     The ID of the token to activate
+.PARAMETER SerialNumber
+    The serial number of the token to activate. Must match exactly one token.
 .PARAMETER UserId
     The ID or UPN of the user who owns the token
 .PARAMETER VerificationCode
@@ -24,6 +26,10 @@
     Set-OATHTokenActive -TokenId "00000000-0000-0000-0000-000000000000" -UserId "user@contoso.com" -Secret "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
     
     Activates the specified token by automatically generating a TOTP code from the provided secret
+.EXAMPLE
+    Set-OATHTokenActive -SerialNumber "12345678" -UserId "user@contoso.com" -VerificationCode "123456"
+    
+    Activates the token with the given serial number for the user
 .NOTES
     Requires Microsoft.Graph.Authentication module and appropriate permissions:
     - Policy.ReadWrite.AuthenticationMethod
@@ -34,20 +40,28 @@ function Set-OATHTokenActive {
     [CmdletBinding(DefaultParameterSetName = 'ManualCode', SupportsShouldProcess = $true)]
     [OutputType([PSCustomObject])]
     param(
-        [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ParameterSetName = 'ManualCode', Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(ParameterSetName = 'AutoCode', Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true)]
         [Alias('Id')]
         [string]$TokenId,
+        
+        [Parameter(ParameterSetName = 'ManualCodeBySerial', Mandatory = $true)]
+        [Parameter(ParameterSetName = 'AutoCodeBySerial', Mandatory = $true)]
+        [string]$SerialNumber,
         
         [Parameter(Mandatory = $true, Position = 1)]
         [string]$UserId,
         
         [Parameter(ParameterSetName = 'ManualCode', Mandatory = $true, Position = 2)]
+        [Parameter(ParameterSetName = 'ManualCodeBySerial', Mandatory = $true, Position = 2)]
         [string]$VerificationCode,
         
         [Parameter(ParameterSetName = 'AutoCode', Mandatory = $true)]
+        [Parameter(ParameterSetName = 'AutoCodeBySerial', Mandatory = $true)]
         [string]$Secret,
         
         [Parameter(ParameterSetName = 'AutoCode')]
+        [Parameter(ParameterSetName = 'AutoCodeBySerial')]
         [ValidateSet('Base32', 'Hex', 'Text')]
         [string]$SecretFormat = 'Base32',
         
@@ -67,7 +81,7 @@ function Set-OATHTokenActive {
         }
         
         # Convert the verification code
-        if ($PSCmdlet.ParameterSetName -eq 'AutoCode') {
+        if ($PSCmdlet.ParameterSetName -like 'AutoCode*') {
             # Try to resolve the user first to make sure they exist
             $resolvedUser = Get-MgUserByIdentifier -Identifier $UserId
             if (-not $resolvedUser) {
@@ -140,6 +154,18 @@ function Set-OATHTokenActive {
         }
 
         try {
+            if ($PSCmdlet.ParameterSetName -like '*BySerial') {
+                # Get-OATHToken treats * and ? as wildcards, so re-filter for an exact match
+                $matchingTokens = @(Get-OATHToken -SerialNumber $SerialNumber -ErrorAction Stop | Where-Object { $_.SerialNumber -eq $SerialNumber })
+                if ($matchingTokens.Count -eq 0) {
+                    throw "No token found with serial number: $SerialNumber"
+                }
+                if ($matchingTokens.Count -gt 1) {
+                    throw "Multiple tokens found with serial number $SerialNumber. Use -TokenId instead."
+                }
+                $TokenId = $matchingTokens[0].Id
+            }
+            
             # Validate token ID format
             if (-not (Test-OATHTokenId -TokenId $TokenId)) {
                 throw "Invalid token ID format: $TokenId"
