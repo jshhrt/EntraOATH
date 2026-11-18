@@ -230,9 +230,9 @@ The menu system provides the following options:
 ### Add OATH Menu
 - **Add OATH Token**: Add a single token with optional user assignment
 - **Assign OATH User**: Assign an existing token to a user
-- **Activate OATH Token**: Activate a token with a verification code
+- **Activate OATH Token**: Enter a token ID or serial number and activate with a verification code
 - **Bulk Import OATH Tokens**: Import multiple tokens from a file
-- **Activate with TOTP**: Activate a token using its secret key
+- **Activate with TOTP**: Enter a token ID or serial number and activate using the token's secret key
 
 ### Remove OATH Menu
 - **Remove OATH**: Remove a single token
