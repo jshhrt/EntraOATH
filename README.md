@@ -318,9 +318,9 @@ Run `Show-OATHTokenMenu` to open the menu.
 ### Add OATH Menu
 - Add OATH Token
 - Assign OATH User (by token ID or serial number)
-- Activate OATH Token
+- Activate OATH Token by token ID or serial number
 - Bulk Import OATH Tokens
-- Activate with TOTP
+- Activate with TOTP by token ID or serial number
 
 ### Remove OATH Menu
 - Remove OATH
